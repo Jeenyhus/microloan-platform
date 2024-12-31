@@ -9,6 +9,12 @@ from django.utils import timezone
 from .models import User, Company, Subscription, LoanApplication, LoanRepayment, Invoice
 from .serializers import (UserSerializer, CompanySerializer, SubscriptionSerializer,
                          LoanApplicationSerializer, LoanRepaymentSerializer, InvoiceSerializer)
+from rest_framework.filters import SearchFilter, OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import LoanApplicationFilter, LoanRepaymentFilter, InvoiceFilter
+from .pagination import StandardResultsSetPagination
+from .exceptions import InsufficientPermission, SubscriptionExpired
+from .constants import SUBSCRIPTION_PLANS
 
 @api_view(['GET'])
 def test_view(request):
@@ -81,6 +87,12 @@ class LoanApplicationViewSet(viewsets.ModelViewSet):
         loan.status = new_status
         loan.save()
         return Response(self.get_serializer(loan).data)
+
+    filterset_class = LoanApplicationFilter
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ['applicant_name', 'loan_officer__username']
+    ordering_fields = ['created_at', 'amount', 'status']
 
 class LoanRepaymentViewSet(viewsets.ModelViewSet):
     """
